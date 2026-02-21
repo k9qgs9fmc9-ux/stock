@@ -505,3 +505,81 @@ def search_stocks(q: str = "", limit: int = 20):
 # 需要自定义 CallbackHandler 并结合 SSE。
 # 在本示例中，为保持稳健性，暂主要支持同步接口，
 # 若需流式，可后续添加 SSE endpoint 监听内部事件队列。
+
+# 实时买卖分析API
+from realtime_trade import get_trade_signal, get_realtime_data
+
+@app.get("/api/trade-signal/{symbol}")
+def get_trade_signal_api(symbol: str):
+    """
+    获取股票实时买卖信号
+    返回买入/卖出建议、置信度、关键理由等
+    """
+    try:
+        logger.info(f"Generating trade signal for {symbol}")
+        signal = get_trade_signal(symbol)
+        return signal
+    except Exception as e:
+        logger.error(f"Error generating trade signal: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/realtime/{symbol}")
+def get_realtime_data_api(symbol: str):
+    """
+    获取股票实时行情数据
+    包括最新价、盘口、分时数据、资金流向等
+    """
+    try:
+        logger.info(f"Fetching realtime data for {symbol}")
+        data = get_realtime_data(symbol)
+        return data
+    except Exception as e:
+        logger.error(f"Error fetching realtime data: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class TradeLogRequest(BaseModel):
+    user_id: str
+    symbol: str
+    action: str
+    score: int
+    confidence: float
+    reasons: list
+
+@app.post("/api/trade-log")
+def log_trade_view(request: TradeLogRequest):
+    """
+    记录用户查看买卖建议的日志（用于合规审计）
+    """
+    try:
+        log_entry = {
+            "user_id": request.user_id,
+            "symbol": request.symbol,
+            "action": request.action,
+            "score": request.score,
+            "confidence": request.confidence,
+            "reasons": request.reasons,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "ip": "127.0.0.1"
+        }
+        
+        log_dir = os.path.join(os.getcwd(), ".data", "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(log_dir, "trade_views.json")
+        
+        logs = []
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r", encoding="utf-8") as f:
+                    logs = json.load(f)
+            except:
+                logs = []
+        
+        logs.append(log_entry)
+        
+        with open(log_path, "w", encoding="utf-8") as f:
+            json.dump(logs[-1000:], f, ensure_ascii=False, indent=2)
+        
+        return {"status": "logged", "timestamp": log_entry["timestamp"]}
+    except Exception as e:
+        logger.error(f"Error logging trade view: {str(e)}")
+        return {"status": "error", "detail": str(e)}

@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import KLineChart from '../components/KLineChart';
 import AnalysisReport from '../components/AnalysisReport';
+import TradeSignalCard from '../components/TradeSignalCard';
 import { analyzeStock } from '../services/api';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 
 const AnalysisPage: React.FC = () => {
@@ -125,6 +126,11 @@ const AnalysisPage: React.FC = () => {
 
       {/* Content */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-6">
+        {/* Real-time Trade Signal Section */}
+        <section>
+          <TradeSignalCard symbol={symbol} />
+        </section>
+
         {/* Chart Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
