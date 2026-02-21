@@ -8,7 +8,8 @@ import {
   Clock,
   BarChart3,
   Target,
-  Shield
+  Shield,
+  Info
 } from 'lucide-react';
 
 interface TradeSignalProps {
@@ -37,8 +38,9 @@ interface TradeSignal {
 const TradeSignalCard: React.FC<TradeSignalProps> = ({ symbol }) => {
   const [signal, setSignal] = useState<TradeSignal | null>(null);
   const [loading, setLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [showConfidenceTip, setShowConfidenceTip] = useState(false);
   const [historyAccuracy, setHistoryAccuracy] = useState({
     accuracy_rate: 64.4,
     avg_return: 2.8
@@ -184,9 +186,35 @@ const TradeSignalCard: React.FC<TradeSignalProps> = ({ symbol }) => {
             </div>
           </div>
           
-          <div className="text-right">
-            <div className="text-4xl font-bold">{signal?.confidence || 0}%</div>
+          <div className="text-right relative">
+            <div className="flex items-center justify-end gap-1">
+              <div className="text-4xl font-bold">{signal?.confidence || 0}%</div>
+              <button 
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                onMouseEnter={() => setShowConfidenceTip(true)}
+                onMouseLeave={() => setShowConfidenceTip(false)}
+                onClick={() => setShowConfidenceTip(!showConfidenceTip)}
+              >
+                <Info className="w-4 h-4 opacity-70" />
+              </button>
+            </div>
             <div className="text-sm opacity-90">置信度</div>
+            
+            {showConfidenceTip && (
+              <div className="absolute right-0 top-16 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50">
+                <div className="font-semibold mb-2">置信度说明</div>
+                <ul className="space-y-1 text-gray-300">
+                  <li>• <span className="text-green-400">85%+</span>: 信号强烈，建议重点关注</li>
+                  <li>• <span className="text-emerald-400">70-85%</span>: 信号较强，可参考执行</li>
+                  <li>• <span className="text-gray-400">60-70%</span>: 信号一般，需谨慎判断</li>
+                  <li>• <span className="text-orange-400">&lt;60%</span>: 信号较弱，仅供参考</li>
+                </ul>
+                <div className="mt-2 pt-2 border-t border-gray-700 text-gray-400">
+                  置信度由多维度指标综合计算得出，包括主力资金流向、技术指标、盘口深度等。
+                </div>
+                <div className="absolute -top-2 right-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -355,10 +383,10 @@ const TradeSignalCard: React.FC<TradeSignalProps> = ({ symbol }) => {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 autoRefresh 
                   ? 'bg-blue-100 text-blue-600' 
-                  : 'bg-gray-100 text-gray-600'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {autoRefresh ? `自动刷新 ${countdown}s` : '已暂停'}
+              {autoRefresh ? `自动刷新 ${countdown}s` : '开启自动刷新'}
             </button>
             <button
               onClick={fetchSignal}
